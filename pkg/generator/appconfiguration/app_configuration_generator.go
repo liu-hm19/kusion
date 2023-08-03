@@ -21,7 +21,7 @@ func (acg *Generator) GenerateSpec(
 		Resources: []models.Resource{},
 	}
 
-	g, err := generators.NewAppConfigurationGenerator(project.Name, acg.AppConfiguration)
+	g, err := generators.NewAppConfigurationGenerator(project.Name, stack.Name, acg.AppConfiguration)
 	if err != nil {
 		return nil, err
 	}

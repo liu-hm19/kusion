@@ -13,6 +13,7 @@ type Generator interface {
 
 const (
 	Kubernetes = "Kubernetes"
+	Terraform  = "Terraform"
 )
 
 type Options struct {

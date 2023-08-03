@@ -1,6 +1,7 @@
 package component
 
 import (
+	"kusionstack.io/kusion/pkg/models/appconfiguration/accessories/database"
 	"kusionstack.io/kusion/pkg/models/appconfiguration/component/workload"
 )
 
@@ -9,6 +10,8 @@ type Component struct {
 	LongRunningService *workload.LongRunningService
 
 	// List of Workload supporting accessory. Accessory defines various runtime capabilities and operation functionalities.
+	// Database defines the relational database service provided by cloud vendor.
+	Database database.Database `yaml:"database,omitempty" json:"database,omitempty"`
 
 	// Variables for Day-2 Operation.
 

@@ -1,6 +1,7 @@
 package generators
 
 import (
+	"fmt"
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
@@ -8,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"kusionstack.io/kusion/pkg/generator"
+	"kusionstack.io/kusion/pkg/generator/appconfiguration/provider"
 	"kusionstack.io/kusion/pkg/models"
 	"kusionstack.io/kusion/pkg/models/appconfiguration/component"
 	"kusionstack.io/kusion/pkg/models/appconfiguration/component/container"
@@ -23,6 +25,29 @@ func kubernetesResourceID(typeMeta metav1.TypeMeta, objectMeta metav1.ObjectMeta
 	}
 	id += objectMeta.Name
 	return id
+}
+
+// terraformResourceID returns the unique ID of a Terraform resource
+// based on its provider, type and name information.
+func terraformResourceID(provider *provider.Provider, resourceType, resourceName string) (string, error) {
+	// resource id example: hashicorp:aws:aws_db_instance:wordpressdev
+	if provider.Namespace == "" || provider.Name == "" {
+		return "", fmt.Errorf("insufficient provider information: %s", provider.URL)
+	}
+
+	id := provider.Namespace + ":" + provider.Name + ":" + resourceType + ":" + resourceName
+
+	return id, nil
+}
+
+// providerExtensions returns the extended information of provider
+// based on the provider and type of the resource.
+func providerExtensions(provider *provider.Provider, providerMeta provider.ProviderMeta, resourceType string) map[string]interface{} {
+	return map[string]interface{}{
+		"provider":     provider.URL,
+		"providerMeta": providerMeta,
+		"resourceType": resourceType,
+	}
 }
 
 // callGeneratorFuncs calls each NewGeneratorFunc in the given slice
@@ -168,4 +193,21 @@ func foreachOrderedComponents(
 	}
 
 	return nil
+}
+
+// dependencyWithKusionPath returns the implicit resource dependency path
+// based on the resource id and name with the "$kusion_path" prefix.
+func dependencyWithKusionPath(id, name string) string {
+	return "$kusion_path." + id + "." + name
+}
+
+// terraformResource returns the Terraform resource in the form of models.Resource
+func terraformResource(id string, dependsOn []string, attrs, exts map[string]interface{}) models.Resource {
+	return models.Resource{
+		ID:         id,
+		Type:       generator.Terraform,
+		Attributes: attrs,
+		DependsOn:  dependsOn,
+		Extensions: exts,
+	}
 }

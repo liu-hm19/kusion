@@ -9,10 +9,11 @@ import (
 
 type appConfigurationGenerator struct {
 	projectName string
+	stackName   string
 	ac          *appconfiguration.AppConfiguration
 }
 
-func NewAppConfigurationGenerator(projectName string, ac *appconfiguration.AppConfiguration) (Generator, error) {
+func NewAppConfigurationGenerator(projectName, stackName string, ac *appconfiguration.AppConfiguration) (Generator, error) {
 	if len(projectName) == 0 {
 		return nil, fmt.Errorf("project name must not be empty")
 	}
@@ -23,6 +24,7 @@ func NewAppConfigurationGenerator(projectName string, ac *appconfiguration.AppCo
 
 	return &appConfigurationGenerator{
 		projectName: projectName,
+		stackName:   stackName,
 		ac:          ac,
 	}, nil
 }
@@ -34,7 +36,7 @@ func (g *appConfigurationGenerator) Generate(spec *models.Spec) error {
 
 	gfs := []NewGeneratorFunc{
 		NewNamespaceGeneratorFunc(g.projectName),
-		NewComponentsGeneratorFunc(g.projectName, g.ac.Components),
+		NewComponentsGeneratorFunc(g.projectName, g.stackName, g.ac.Components),
 	}
 
 	if err := callGenerators(spec, gfs...); err != nil {

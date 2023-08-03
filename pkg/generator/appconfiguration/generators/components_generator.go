@@ -9,23 +9,25 @@ import (
 
 type componentsGenerator struct {
 	projectName string
+	stackName   string
 	components  map[string]component.Component
 }
 
-func NewComponentsGenerator(projectName string, components map[string]component.Component) (Generator, error) {
+func NewComponentsGenerator(projectName, stackName string, components map[string]component.Component) (Generator, error) {
 	if len(projectName) == 0 {
 		return nil, fmt.Errorf("project name must not be empty")
 	}
 
 	return &componentsGenerator{
 		projectName: projectName,
+		stackName:   stackName,
 		components:  components,
 	}, nil
 }
 
-func NewComponentsGeneratorFunc(projectName string, components map[string]component.Component) NewGeneratorFunc {
+func NewComponentsGeneratorFunc(projectName, stackName string, components map[string]component.Component) NewGeneratorFunc {
 	return func() (Generator, error) {
-		return NewComponentsGenerator(projectName, components)
+		return NewComponentsGenerator(projectName, stackName, components)
 	}
 }
 
@@ -37,6 +39,7 @@ func (g *componentsGenerator) Generate(spec *models.Spec) error {
 	if g.components != nil {
 		if err := foreachOrderedComponents(g.components, func(compName string, comp component.Component) error {
 			gfs := []NewGeneratorFunc{
+				NewDatabaseGeneratorFunc(g.projectName, g.stackName, &comp),
 				NewDeploymentGeneratorFunc(g.projectName, compName, &comp),
 				NewJobGeneratorFunc(g.projectName, compName, &comp),
 			}
