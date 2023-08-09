@@ -2,6 +2,7 @@ package generators
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
@@ -18,9 +19,6 @@ const (
 	randomPassword   = "random_password"
 	awsSecurityGroup = "aws_security_group"
 	awsDBInstance    = "aws_db_instance"
-	dbUsernameKey    = "DATABASE_USERNAME"
-	dbPasswordKey    = "DATABASE_PASSWORD"
-	dbHostKey        = "DATABASE_HOST_ADDRESS"
 )
 
 type databaseGenerator struct {
@@ -125,6 +123,14 @@ func (g *databaseGenerator) generateAlicloudResources(db *database.Database, spe
 func generateAWSSecurityGroup(projectName, stackName, providerRegion string,
 	pvd *provider.Provider, db *database.Database,
 ) (string, models.Resource, error) {
+	// securityIPs should be in the format of IP address or Classes Inter-Domain
+	// Routing (CIDR) mode.
+	for _, ip := range db.SecurityIPs {
+		if !isIPAddress(ip) && !isCIDR(ip) {
+			return "", models.Resource{}, fmt.Errorf("illegal security ip format")
+		}
+	}
+
 	sgAttrs := map[string]interface{}{
 		"egress": []awsSecurityGroupTraffic{
 			{
@@ -181,7 +187,7 @@ func generateAWSDBInstance(projectName, stackName, providerRegion, awsSecurityGr
 		"identifier":          projectName + stackName,
 		"instance_class":      db.InstanceType,
 		"password":            dependencyWithKusionPath(randomPasswordID, "result"),
-		"publicly_accessible": db.AccessInternet,
+		"publicly_accessible": isPublicAccessible(db.SecurityIPs),
 		"skip_final_snapshot": true,
 		"username":            db.Username,
 		"vpc_security_groups_ids": []string{
@@ -203,12 +209,12 @@ func generateDBSecret(projectName, stackName, username, password, hostAddress st
 	// create the data map of k8s secret which stores the database username, password
 	// and host address.
 	data := make(map[string]string)
-	data[dbUsernameKey] = username
-	data[dbPasswordKey] = password
-	data[dbHostKey] = hostAddress
+	data["username"] = username
+	data["password"] = password
+	data["hostAddress"] = hostAddress
 
 	// create the k8s secret and append to the spec.
-	cm := &v1.Secret{
+	secret := &v1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: v1.SchemeGroupVersion.String(),
@@ -221,8 +227,37 @@ func generateDBSecret(projectName, stackName, username, password, hostAddress st
 	}
 
 	return appendToSpec(
-		kubernetesResourceID(cm.TypeMeta, cm.ObjectMeta),
-		cm,
+		kubernetesResourceID(secret.TypeMeta, secret.ObjectMeta),
+		secret,
 		spec,
 	)
+}
+
+func isPublicAccessible(securityIPs []string) bool {
+	var parsedIP net.IP
+	for _, ip := range securityIPs {
+		if isIPAddress(ip) {
+			parsedIP = net.ParseIP(ip)
+		} else if isCIDR(ip) {
+			parsedIP, _, _ = net.ParseCIDR(ip)
+		}
+
+		if parsedIP != nil && !parsedIP.IsPrivate() {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isIPAddress(ipStr string) bool {
+	ip := net.ParseIP(ipStr)
+
+	return ip != nil
+}
+
+func isCIDR(cidrStr string) bool {
+	_, _, err := net.ParseCIDR(cidrStr)
+
+	return err == nil
 }

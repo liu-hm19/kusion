@@ -19,6 +19,8 @@ type Database struct {
 	Username string `json:"username,omitempty" yaml:"username,omitempty"`
 	// The list of IP addresses allowed to access the rds instance.
 	SecurityIPs []string `json:"securityIPs,omitempty" yaml:"securityIPs,omitempty"`
-	// Whether the rds instance is publicly accessible.
-	AccessInternet bool `json:"accessInternet,omitempty" yaml:"accessInternet,omitempty"`
+	// The virtual switch ID to launch alicloud rds instance.
+	AlicloudVSwitchID string `json:"alicloudVSwitchID,omitempty" yaml:"alicloudVSwitchID,omitempty"`
+	// The diversified rds configuration items from different cloud vendors.
+	ExtraMap map[string]string `json:"extraMap,omitempty" yaml:"extraMap,omitempty"`
 }
