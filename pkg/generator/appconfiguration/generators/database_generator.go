@@ -63,7 +63,11 @@ func (g *databaseGenerator) Generate(spec *models.Spec) error {
 		spec.Resources = make(models.Resources, 0)
 	}
 
+	// skip rendering for empty rds instance.
 	db := g.comp.Database
+	if db.Type == "" {
+		return nil
+	}
 
 	switch strings.ToLower(db.Type) {
 	case "aws":
