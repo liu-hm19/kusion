@@ -39,9 +39,9 @@ func (g *componentsGenerator) Generate(spec *models.Spec) error {
 	if g.components != nil {
 		if err := foreachOrderedComponents(g.components, func(compName string, comp component.Component) error {
 			gfs := []NewGeneratorFunc{
-				NewDatabaseGeneratorFunc(g.projectName, g.stackName, &comp),
 				NewDeploymentGeneratorFunc(g.projectName, compName, &comp),
 				NewJobGeneratorFunc(g.projectName, compName, &comp),
+				NewDatabaseGeneratorFunc(g.projectName, g.stackName, &comp),
 			}
 
 			if err := callGenerators(spec, gfs...); err != nil {

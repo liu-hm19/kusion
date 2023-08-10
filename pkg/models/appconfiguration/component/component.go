@@ -6,8 +6,8 @@ import (
 )
 
 type Component struct {
-	Job                *workload.Job
-	LongRunningService *workload.LongRunningService
+	Job                *workload.Job                `yaml:"job,omitempty" json:"job,omitempty"`
+	LongRunningService *workload.LongRunningService `yaml:"longRunningService,omitempty" json:"longRunningService,omitempty"`
 
 	// List of Workload supporting accessory. Accessory defines various runtime capabilities and operation functionalities.
 	// Database defines the relational database service provided by cloud vendor.
