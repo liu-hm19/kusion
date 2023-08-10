@@ -21,6 +21,9 @@ type Database struct {
 	SecurityIPs []string `json:"securityIPs,omitempty" yaml:"securityIPs,omitempty"`
 	// The virtual switch ID to launch alicloud rds instance.
 	AlicloudVSwitchID string `json:"alicloudVSwitchID,omitempty" yaml:"alicloudVSwitchID,omitempty"`
+	// Whether the host address of the rds instance will route through the public network or
+	// the internal network of the cloud vendor.
+	PrivateRouting bool `json:"privateRouting,omitempty" yaml:"privateRouting,omitempty"`
 	// The diversified rds configuration items from different cloud vendors.
 	ExtraMap map[string]string `json:"extraMap,omitempty" yaml:"extraMap,omitempty"`
 }

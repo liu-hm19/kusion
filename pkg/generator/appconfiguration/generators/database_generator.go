@@ -16,9 +16,12 @@ import (
 )
 
 const (
-	randomPassword   = "random_password"
-	awsSecurityGroup = "aws_security_group"
-	awsDBInstance    = "aws_db_instance"
+	randomPassword       = "random_password"
+	awsSecurityGroup     = "aws_security_group"
+	awsDBInstance        = "aws_db_instance"
+	alicloudDBInstance   = "alicloud_db_instance"
+	alicloudDBConnection = "alicloud_db_connection"
+	alicloudRDSAccount   = "alicloud_rds_account"
 )
 
 type databaseGenerator struct {
@@ -34,10 +37,19 @@ type awsSecurityGroupTraffic struct {
 	ToPort     int      `yaml:"to_port" json:"to_port"`
 }
 
+type alicloudServerlessConfig struct {
+	AutoPause   bool `yaml:"auto_pause" json:"auto_pause"`
+	MaxCapacity int  `yaml:"max_capacity" json:"max_capacity"`
+	MinCapacity int  `yaml:"min_capacity" json:"min_capacity"`
+	SwitchForce bool `yaml:"switch_force" json:"switch_force"`
+}
+
 var (
-	tfProviderAWS     = os.Getenv("TF_PROVIDER_AWS")
-	tfProviderRandom  = os.Getenv("TF_PROVIDER_RANDOM")
-	awsProviderRegion = os.Getenv("AWS_PROVIDER_REGION")
+	tfProviderAWS          = os.Getenv("TF_PROVIDER_AWS")
+	tfProviderAlicloud     = os.Getenv("TF_PROVIDER_ALICLOUD")
+	tfProviderRandom       = os.Getenv("TF_PROVIDER_RANDOM")
+	awsProviderRegion      = os.Getenv("AWS_PROVIDER_REGION")
+	alicloudProviderRegion = os.Getenv("ALICLOUD_PROVIDER_REGION")
 )
 
 func NewDatabaseGenerator(projectName, stackName string, comp *component.Component) (Generator, error) {
@@ -120,8 +132,136 @@ func (g *databaseGenerator) generateAWSResources(db *database.Database, spec *mo
 }
 
 func (g *databaseGenerator) generateAlicloudResources(db *database.Database, spec *models.Spec) error {
-	// TODO: implement generator logic for alicloud rds instance.
-	panic("not implemented yet")
+	// set the alicloud and random provider.
+	randomProvider := &provider.Provider{}
+	if err := randomProvider.SetString(tfProviderRandom); err != nil {
+		return err
+	}
+
+	alicloudProvider := &provider.Provider{}
+	if err := alicloudProvider.SetString(tfProviderAlicloud); err != nil {
+		return err
+	}
+
+	// build alicloud_db_instance.
+	alicloudDBInstanceID, r, err := generateAlicloudDBInstance(g.projectName, g.stackName, alicloudProviderRegion, alicloudProvider, db)
+	if err != nil {
+		return err
+	}
+	spec.Resources = append(spec.Resources, r)
+
+	// build alicloud_db_connection for alicloud_db_instance.
+	var alicloudDBConnectionID string
+	if isPublicAccessible(db.SecurityIPs) {
+		alicloudDBConnectionID, r, err = generateAlicloudDBConnection(g.projectName, g.stackName, alicloudDBInstanceID, alicloudProviderRegion, alicloudProvider, db)
+		if err != nil {
+			return nil
+		}
+		spec.Resources = append(spec.Resources, r)
+	}
+
+	// build random_password for alicloud_rds_account.
+	randomPasswordID, r, err := generateTFRandomPassword(g.projectName, g.stackName, randomProvider)
+	if err != nil {
+		return err
+	}
+	spec.Resources = append(spec.Resources, r)
+
+	// build alicloud_rds_account.
+	r, err = generateAlicloudRDSAccount(g.projectName, g.stackName, db.Username, randomPasswordID, alicloudDBInstanceID, alicloudProviderRegion, alicloudProvider, db)
+	if err != nil {
+		return err
+	}
+	spec.Resources = append(spec.Resources, r)
+
+	// inject the database username, password and host address into k8s secret.
+	password := dependencyWithKusionPath(randomPasswordID, "result")
+	hostAddress := dependencyWithKusionPath(alicloudDBInstanceID, "connection_string")
+	if !db.PrivateRouting {
+		hostAddress = dependencyWithKusionPath(alicloudDBConnectionID, "connection_string")
+	}
+
+	return generateDBSecret(g.projectName, g.stackName, db.Username, password, hostAddress, spec)
+}
+
+func generateAlicloudDBInstance(projectName, stackName, providerRegion string,
+	pvd *provider.Provider, db *database.Database,
+) (string, models.Resource, error) {
+	dbAttrs := map[string]interface{}{
+		"category":         db.Category,
+		"engine":           db.Engine,
+		"engine_version":   db.Version,
+		"instance_storage": db.Size,
+		"instance_type":    db.InstanceType,
+		"security_ips":     db.SecurityIPs,
+		"vswitch_id":       db.AlicloudVSwitchID,
+	}
+
+	// set serverless specific attributes.
+	if strings.Contains(db.Category, "serverless") {
+		dbAttrs["db_instance_storage_type"] = "cloud_essd"
+		dbAttrs["instance_charge_type"] = "Serverless"
+
+		serverlessConfig := alicloudServerlessConfig{
+			MaxCapacity: 8,
+			MinCapacity: 1,
+		}
+		if db.Engine == "SQLServer" {
+			serverlessConfig.MinCapacity = 2
+		} else if db.Engine == "MySQL" {
+			serverlessConfig.AutoPause = false
+			serverlessConfig.SwitchForce = false
+		}
+		dbAttrs["serverless_config"] = []alicloudServerlessConfig{
+			serverlessConfig,
+		}
+	}
+
+	id, err := terraformResourceID(pvd, alicloudDBInstance, projectName+stackName)
+	if err != nil {
+		return "", models.Resource{}, err
+	}
+
+	return id, terraformResource(id, nil, dbAttrs, providerExtensions(pvd, provider.ProviderMeta{
+		Region: providerRegion,
+	}, alicloudDBInstance)), nil
+}
+
+func generateAlicloudDBConnection(projectName, stackName, dbInstanceID, providerRegion string,
+	pvd *provider.Provider, db *database.Database,
+) (string, models.Resource, error) {
+	dbConnectionAttrs := map[string]interface{}{
+		"instance_id": dependencyWithKusionPath(dbInstanceID, "id"),
+	}
+
+	id, err := terraformResourceID(pvd, alicloudDBConnection, projectName+stackName)
+	if err != nil {
+		return "", models.Resource{}, err
+	}
+
+	return id, terraformResource(id, nil, dbConnectionAttrs, providerExtensions(pvd, provider.ProviderMeta{
+		Region: providerRegion,
+	}, alicloudDBConnection)), nil
+}
+
+func generateAlicloudRDSAccount(projectName, stackName, accountName, randomPwdID, dbInstanceID, providerRegion string,
+	pvd *provider.Provider, db *database.Database,
+) (models.Resource, error) {
+	rdsAccountAttrs := map[string]interface{}{
+		"account_name":     accountName,
+		"account_password": dependencyWithKusionPath(randomPwdID, "result"),
+		"account_type":     "Super",
+		"db_instance_id":   dependencyWithKusionPath(dbInstanceID, "id"),
+	}
+
+	id, err := terraformResourceID(pvd, alicloudRDSAccount, projectName+stackName)
+	if err != nil {
+		return models.Resource{}, err
+	}
+
+	return terraformResource(id, nil, rdsAccountAttrs, providerExtensions(pvd, provider.ProviderMeta{
+		Region: providerRegion,
+	}, alicloudRDSAccount)), nil
 }
 
 func generateAWSSecurityGroup(projectName, stackName, providerRegion string,
