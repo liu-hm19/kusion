@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -104,7 +105,16 @@ func toOrderedContainers(appContainers map[string]container.Container, uniqueApp
 	if err := appconfiguration.ForeachOrdered(appContainers, func(containerName string, c container.Container) error {
 		// Create a slice of env vars based on the container's env vars.
 		var envs []corev1.EnvVar
-		for k, v := range c.Env {
+
+		keys := make([]string, 0, len(c.Env))
+		for k := range c.Env {
+			keys = append(keys, k)
+		}
+
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			v := c.Env[k]
 			envs = append(envs, *MagicEnvVar(k, v))
 		}
 
