@@ -6,7 +6,7 @@ import (
 
 	apiv1 "kusionstack.io/kusion/pkg/apis/core/v1"
 	"kusionstack.io/kusion/pkg/modules"
-	accessories "kusionstack.io/kusion/pkg/modules/generators/accessories/database"
+	database "kusionstack.io/kusion/pkg/modules/generators/accessories"
 	"kusionstack.io/kusion/pkg/modules/generators/monitoring"
 	"kusionstack.io/kusion/pkg/modules/generators/trait"
 	"kusionstack.io/kusion/pkg/modules/generators/workload"
@@ -85,7 +85,7 @@ func (g *appConfigurationGenerator) Generate(i *apiv1.Intent) error {
 	// Generate resources
 	gfs := []modules.NewGeneratorFunc{
 		NewNamespaceGeneratorFunc(g.project.Name, g.ws),
-		accessories.NewDatabaseGeneratorFunc(g.project, g.stack, g.appName, g.app.Workload, g.app.Database),
+		database.NewDatabaseGeneratorFunc(g.project, g.stack, g.appName, g.app.Workload, g.app.Database, g.ws),
 		workload.NewWorkloadGeneratorFunc(g.project, g.stack, g.appName, g.app.Workload, modulesConfig),
 		trait.NewOpsRuleGeneratorFunc(g.project, g.stack, g.appName, g.app, modulesConfig),
 		monitoring.NewMonitoringGeneratorFunc(g.project, g.app.Monitoring, g.appName),

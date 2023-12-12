@@ -1,4 +1,4 @@
-package accessories
+package mysql
 
 import (
 	"testing"
@@ -7,15 +7,15 @@ import (
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	apiv1 "kusionstack.io/kusion/pkg/apis/core/v1"
+
 	"kusionstack.io/kusion/pkg/modules/inputs"
-	"kusionstack.io/kusion/pkg/modules/inputs/accessories/database"
+	"kusionstack.io/kusion/pkg/modules/inputs/accessories/mysql"
 	"kusionstack.io/kusion/pkg/modules/inputs/workload"
 	"kusionstack.io/kusion/pkg/modules/inputs/workload/container"
 )
 
-func TestNewDatabaseGenerator(t *testing.T) {
+func TestNewMySQLGenerator(t *testing.T) {
 	project := &apiv1.Project{
 		Name: "testproject",
 	}
@@ -24,38 +24,21 @@ func TestNewDatabaseGenerator(t *testing.T) {
 	}
 	appName := "testapp"
 	workload := &workload.Workload{}
-	database := &database.Database{}
-	generator, err := NewDatabaseGenerator(project, stack, appName, workload, database)
+	mysql := &mysql.MySQL{}
+	ws := &apiv1.Workspace{}
+	generator, err := NewMySQLGenerator(project, stack, appName, workload, mysql, ws)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, generator)
 }
 
 func TestGenerate(t *testing.T) {
-	project := &apiv1.Project{
-		Name: "testproject",
-	}
-	stack := &apiv1.Stack{
-		Name: "teststack",
-	}
-	appName := "testapp"
-	workload := &workload.Workload{}
-	database := &database.Database{
-		Type:         "aws",
-		Engine:       "mysql",
-		Version:      "5.7",
-		InstanceType: "db.t3.micro",
-		Size:         10,
-		Username:     "root",
-	}
-	generator, _ := NewDatabaseGenerator(project, stack, appName, workload, database)
+	g := genAWSMySQLGenerator()
 
-	awsProviderRegion = "us-east-1"
 	spec := &apiv1.Intent{}
-	err := generator.Generate(spec)
+	err := g.Generate(spec)
 
 	var providerMeta map[string]interface{}
-	var cidrBlocks []string
 	expectedSpec := &apiv1.Intent{
 		Resources: apiv1.Resources{
 			apiv1.Resource{
@@ -67,7 +50,7 @@ func TestGenerate(t *testing.T) {
 					"special":          true,
 				},
 				Extensions: map[string]interface{}{
-					"provider":     randomProviderURL,
+					"provider":     "registry.terraform.io/hashicorp/random/3.5.1",
 					"providerMeta": providerMeta,
 					"resourceType": "random_password",
 				},
@@ -86,7 +69,7 @@ func TestGenerate(t *testing.T) {
 					},
 					"ingress": []awsSecurityGroupTraffic{
 						{
-							CidrBlocks: cidrBlocks,
+							CidrBlocks: []string{"0.0.0.0/0"},
 							Protocol:   "tcp",
 							FromPort:   3306,
 							ToPort:     3306,
@@ -94,9 +77,9 @@ func TestGenerate(t *testing.T) {
 					},
 				},
 				Extensions: map[string]interface{}{
-					"provider": defaultAWSProvider,
+					"provider": "registry.terraform.io/hashicorp/aws/5.0.1",
 					"providerMeta": map[string]interface{}{
-						"region": awsProviderRegion,
+						"region": "us-east-1",
 					},
 					"resourceType": "aws_security_group",
 				},
@@ -105,23 +88,23 @@ func TestGenerate(t *testing.T) {
 				ID:   "hashicorp:aws:aws_db_instance:testapp",
 				Type: "Terraform",
 				Attributes: map[string]interface{}{
-					"allocated_storage":   database.Size,
-					"engine":              database.Engine,
-					"engine_version":      database.Version,
-					"identifier":          appName,
-					"instance_class":      database.InstanceType,
+					"allocated_storage":   g.mysql.Size,
+					"engine":              dbEngine,
+					"engine_version":      g.mysql.Version,
+					"identifier":          g.appName,
+					"instance_class":      g.mysql.InstanceType,
 					"password":            "$kusion_path.hashicorp:random:random_password:testapp-db.result",
-					"publicly_accessible": false,
+					"publicly_accessible": true,
 					"skip_final_snapshot": true,
-					"username":            database.Username,
+					"username":            g.mysql.Username,
 					"vpc_security_group_ids": []string{
 						"$kusion_path.hashicorp:aws:aws_security_group:testapp-db.id",
 					},
 				},
 				Extensions: map[string]interface{}{
-					"provider": defaultAWSProvider,
+					"provider": "registry.terraform.io/hashicorp/aws/5.0.1",
 					"providerMeta": map[string]interface{}{
-						"region": awsProviderRegion,
+						"region": "us-east-1",
 					},
 					"resourceType": "aws_db_instance",
 				},
@@ -140,7 +123,7 @@ func TestGenerate(t *testing.T) {
 					"stringData": map[string]interface{}{
 						"hostAddress": "$kusion_path.hashicorp:aws:aws_db_instance:testapp.address",
 						"password":    "$kusion_path.hashicorp:random:random_password:testapp-db.result",
-						"username":    database.Username,
+						"username":    g.mysql.Username,
 					},
 				},
 				Extensions: map[string]interface{}{
@@ -155,7 +138,7 @@ func TestGenerate(t *testing.T) {
 	assert.Equal(t, expectedSpec.Resources, spec.Resources)
 }
 
-func TestInjectSecret(t *testing.T) {
+func TestPatchWorkspaceConfig(t *testing.T) {
 	project := &apiv1.Project{
 		Name: "testproject",
 	}
@@ -163,7 +146,68 @@ func TestInjectSecret(t *testing.T) {
 		Name: "teststack",
 	}
 	appName := "testapp"
-	workload := &workload.Workload{
+	workload := &workload.Workload{}
+	mysql := &mysql.MySQL{
+		Type:    "cloud",
+		Version: "5.7",
+	}
+	ws := &apiv1.Workspace{
+		Name: "testworkspace",
+		Runtimes: &apiv1.RuntimeConfigs{
+			Kubernetes: &apiv1.KubernetesConfig{
+				KubeConfig: "/Users/username/testkubeconfig",
+			},
+			Terraform: apiv1.TerraformConfig{
+				"random": &apiv1.ProviderConfig{
+					Source:  "hashicorp/random",
+					Version: "3.5.1",
+				},
+				"aws": &apiv1.ProviderConfig{
+					Source:  "hashicorp/aws",
+					Version: "5.0.1",
+					GenericConfig: apiv1.GenericConfig{
+						"region": "us-east-1",
+					},
+				},
+			},
+		},
+		Modules: apiv1.ModuleConfigs{
+			"mysql": &apiv1.ModuleConfig{
+				Default: apiv1.GenericConfig{
+					"cloud":          "aws",
+					"size":           20,
+					"instanceType":   "db.t3.micro",
+					"privateRouting": false,
+				},
+			},
+		},
+	}
+
+	g := &mysqlGenerator{
+		project:  project,
+		stack:    stack,
+		appName:  appName,
+		workload: workload,
+		mysql:    mysql,
+		ws:       ws,
+	}
+	err := g.patchWorkspaceConfig()
+
+	assert.NoError(t, err)
+	assert.Equal(t, g.mysql, genAWSMySQLGenerator().mysql)
+}
+
+func TestGetTFProviderType(t *testing.T) {
+	g := genAWSMySQLGenerator()
+	providerType, err := g.getTFProviderType()
+
+	assert.NoError(t, err)
+	assert.Equal(t, providerType, "aws")
+}
+
+func TestInjectSecret(t *testing.T) {
+	g := genAWSMySQLGenerator()
+	g.workload = &workload.Workload{
 		Service: &workload.Service{
 			Base: workload.Base{
 				Containers: map[string]container.Container{
@@ -174,25 +218,10 @@ func TestInjectSecret(t *testing.T) {
 			},
 		},
 	}
-	database := &database.Database{
-		Type:         "aws",
-		Engine:       "mysql",
-		Version:      "5.7",
-		InstanceType: "db.t3.micro",
-		Size:         10,
-		Username:     "root",
-	}
-	generator := &databaseGenerator{
-		project:  project,
-		stack:    stack,
-		appName:  appName,
-		workload: workload,
-		database: database,
-	}
 
 	data := make(map[string]string)
 	data["hostAddress"] = "$kusion_path.hashicorp:aws:aws_db_instance:testapp.address"
-	data["username"] = database.Username
+	data["username"] = g.mysql.Username
 	data["password"] = "$kusion_path.hashicorp:random:random_password:testapp-db.result"
 
 	// Create the k8s secret and append to the spec.
@@ -202,13 +231,13 @@ func TestInjectSecret(t *testing.T) {
 			APIVersion: v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName + dbResSuffix,
-			Namespace: project.Name,
+			Name:      g.appName + dbResSuffix,
+			Namespace: g.project.Name,
 		},
 		StringData: data,
 	}
 
-	err := generator.injectSecret(secret)
+	err := g.injectSecret(secret)
 	expectedContainer := container.Container{
 		Image: "testimage:latest",
 		Env: yaml.MapSlice{
@@ -228,31 +257,18 @@ func TestInjectSecret(t *testing.T) {
 	}
 
 	assert.NoError(t, err)
-	assert.Equal(t, expectedContainer, workload.Service.Containers["testcontainer"])
+	assert.Equal(t, expectedContainer, g.workload.Service.Containers["testcontainer"])
 }
 
 func TestGenerateTFRandomPassword(t *testing.T) {
-	project := &apiv1.Project{
-		Name: "testproject",
-	}
-	stack := &apiv1.Stack{
-		Name: "teststack",
-	}
-	appName := "testapp"
-	workload := &workload.Workload{}
-	database := &database.Database{}
-	generator := &databaseGenerator{
-		project:  project,
-		stack:    stack,
-		appName:  appName,
-		workload: workload,
-		database: database,
-	}
+	g := genAWSMySQLGenerator()
+
 	randomProvider := &inputs.Provider{}
-	randomProvider.SetString(randomProviderURL)
+	randomProviderURL, _ := inputs.GetProviderURL(g.ws.Runtimes.Terraform[inputs.RandomProvider])
+	_ = randomProvider.SetString(randomProviderURL)
 
 	var providerMeta map[string]interface{}
-	id, res := generator.generateTFRandomPassword(randomProvider)
+	id, res := g.generateTFRandomPassword(randomProvider)
 	expectedID := "hashicorp:random:random_password:testapp-db"
 	expectedRes := apiv1.Resource{
 		ID:   "hashicorp:random:random_password:testapp-db",
@@ -274,28 +290,13 @@ func TestGenerateTFRandomPassword(t *testing.T) {
 }
 
 func TestGenerateDBSeret(t *testing.T) {
-	project := &apiv1.Project{
-		Name: "testproject",
-	}
-	stack := &apiv1.Stack{
-		Name: "teststack",
-	}
-	appName := "testapp"
-	workload := &workload.Workload{}
-	database := &database.Database{}
-	generator := &databaseGenerator{
-		project:  project,
-		stack:    stack,
-		appName:  appName,
-		workload: workload,
-		database: database,
-	}
+	g := genAWSMySQLGenerator()
 
 	spec := &apiv1.Intent{}
 	hostAddress := "$kusion_path.hashicorp:aws:aws_db_instance:testapp.address"
-	username := database.Username
+	username := g.mysql.Username
 	password := "$kusion_path.hashicorp:random:random_password:testapp-db.result"
-	secret, err := generator.generateDBSecret(hostAddress, username, password, spec)
+	secret, err := g.generateDBSecret(hostAddress, username, password, spec)
 
 	data := make(map[string]string)
 	data["hostAddress"] = hostAddress
@@ -307,8 +308,8 @@ func TestGenerateDBSeret(t *testing.T) {
 			APIVersion: v1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName + dbResSuffix,
-			Namespace: project.Name,
+			Name:      g.appName + dbResSuffix,
+			Namespace: g.project.Name,
 		},
 		StringData: data,
 	}

@@ -1,28 +1,22 @@
-package accessories
+package mysql
 
 import (
-	"fmt"
-	"os"
 	"strings"
 
 	v1 "k8s.io/api/core/v1"
 
 	apiv1 "kusionstack.io/kusion/pkg/apis/core/v1"
+
 	"kusionstack.io/kusion/pkg/modules"
 	"kusionstack.io/kusion/pkg/modules/inputs"
-	"kusionstack.io/kusion/pkg/modules/inputs/accessories/database"
+	"kusionstack.io/kusion/pkg/modules/inputs/accessories/mysql"
 )
 
 const (
-	alicloudDBInstance      = "alicloud_db_instance"
-	alicloudDBConnection    = "alicloud_db_connection"
-	alicloudRDSAccount      = "alicloud_rds_account"
-	defaultAlicloudProvider = "registry.terraform.io/aliyun/alicloud/1.209.1"
-)
-
-var (
-	tfProviderAlicloud     = os.Getenv("TF_PROVIDER_ALICLOUD")
-	alicloudProviderRegion = os.Getenv("ALICLOUD_PROVIDER_REGION")
+	defaultAlicloudProviderURL = "registry.terraform.io/aliyun/alicloud/1.209.1"
+	alicloudDBInstance         = "alicloud_db_instance"
+	alicloudDBConnection       = "alicloud_db_connection"
+	alicloudRDSAccount         = "alicloud_rds_account"
 )
 
 type alicloudServerlessConfig struct {
@@ -32,27 +26,40 @@ type alicloudServerlessConfig struct {
 	MinCapacity int  `yaml:"min_capacity,omitempty" json:"min_capacity,omitempty"`
 }
 
-func (g *databaseGenerator) generateAlicloudResources(db *database.Database, spec *apiv1.Intent) (*v1.Secret, error) {
+// generateAlicloudResources generates alicloud provided mysql database instance.
+func (g *mysqlGenerator) generateAlicloudResources(db *mysql.MySQL, spec *apiv1.Intent) (*v1.Secret, error) {
 	// Set the terraform random and alicloud provider.
-	randomProvider := &inputs.Provider{}
-	if err := randomProvider.SetString(randomProviderURL); err != nil {
-		return nil, err
-	}
+	randomProvider, alicloudProvider := &inputs.Provider{}, &inputs.Provider{}
 
-	// The region of the alicloud provider must be set.
-	if alicloudProviderRegion == "" {
-		return nil, fmt.Errorf("the region of the alicloud provider must be set")
-	}
-
-	var providerURL string
-	alicloudProvider := &inputs.Provider{}
-	if tfProviderAlicloud == "" {
-		providerURL = defaultAlicloudProvider
+	randomProviderCfg, ok := g.ws.Runtimes.Terraform[inputs.RandomProvider]
+	if !ok {
+		randomProvider.SetString(defaultRandomProviderURL)
 	} else {
-		providerURL = tfProviderAlicloud
+		randomProviderURL, err := inputs.GetProviderURL(randomProviderCfg)
+		if err != nil {
+			return nil, err
+		}
+		if err := randomProvider.SetString(randomProviderURL); err != nil {
+			return nil, err
+		}
 	}
 
-	if err := alicloudProvider.SetString(providerURL); err != nil {
+	alicloudProviderCfg, ok := g.ws.Runtimes.Terraform[inputs.AlicloudProvider]
+	if !ok {
+		alicloudProvider.SetString(defaultAlicloudProviderURL)
+	} else {
+		alicloudProviderURL, err := inputs.GetProviderURL(alicloudProviderCfg)
+		if err != nil {
+			return nil, err
+		}
+		if err := alicloudProvider.SetString(alicloudProviderURL); err != nil {
+			return nil, err
+		}
+	}
+
+	// Get the alicloud provider region, and the region of the alicloud provider must be set.
+	alicloudProviderRegion, err := inputs.GetProviderRegion(g.ws.Runtimes.Terraform[inputs.AlicloudProvider])
+	if err != nil {
 		return nil, err
 	}
 
@@ -86,14 +93,14 @@ func (g *databaseGenerator) generateAlicloudResources(db *database.Database, spe
 	return g.generateDBSecret(hostAddress, db.Username, password, spec)
 }
 
-func (g *databaseGenerator) generateAlicloudDBInstance(
+func (g *mysqlGenerator) generateAlicloudDBInstance(
 	region string,
 	provider *inputs.Provider,
-	db *database.Database,
+	db *mysql.MySQL,
 ) (string, apiv1.Resource) {
 	dbAttrs := map[string]interface{}{
 		"category":         db.Category,
-		"engine":           db.Engine,
+		"engine":           "MySQL",
 		"engine_version":   db.Version,
 		"instance_storage": db.Size,
 		"instance_type":    db.InstanceType,
@@ -110,12 +117,9 @@ func (g *databaseGenerator) generateAlicloudDBInstance(
 			MaxCapacity: 8,
 			MinCapacity: 1,
 		}
-		if db.Engine == "SQLServer" {
-			serverlessConfig.MinCapacity = 2
-		} else if db.Engine == "MySQL" {
-			serverlessConfig.AutoPause = false
-			serverlessConfig.SwitchForce = false
-		}
+		serverlessConfig.AutoPause = false
+		serverlessConfig.SwitchForce = false
+
 		dbAttrs["serverless_config"] = []alicloudServerlessConfig{
 			serverlessConfig,
 		}
@@ -129,7 +133,7 @@ func (g *databaseGenerator) generateAlicloudDBInstance(
 	return id, modules.TerraformResource(id, nil, dbAttrs, pvdExts)
 }
 
-func (g *databaseGenerator) generateAlicloudDBConnection(
+func (g *mysqlGenerator) generateAlicloudDBConnection(
 	dbInstanceID, region string,
 	provider *inputs.Provider,
 ) (string, apiv1.Resource) {
@@ -145,8 +149,8 @@ func (g *databaseGenerator) generateAlicloudDBConnection(
 	return id, modules.TerraformResource(id, nil, dbConnectionAttrs, pvdExts)
 }
 
-func (g *databaseGenerator) generateAlicloudRDSAccount(
-	accountName, randomPasswordID, dbInstanceID, region string, provider *inputs.Provider, db *database.Database,
+func (g *mysqlGenerator) generateAlicloudRDSAccount(
+	accountName, randomPasswordID, dbInstanceID, region string, provider *inputs.Provider, db *mysql.MySQL,
 ) apiv1.Resource {
 	rdsAccountAttrs := map[string]interface{}{
 		"account_name":     accountName,
