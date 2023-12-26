@@ -137,7 +137,7 @@ func (g *mysqlGenerator) generateAWSDBInstance(
 		"allocated_storage":   db.Size,
 		"engine":              dbEngine,
 		"engine_version":      db.Version,
-		"identifier":          g.appName,
+		"identifier":          db.DatabaseName,
 		"instance_class":      db.InstanceType,
 		"password":            modules.KusionPathDependency(randomPasswordID, "result"),
 		"publicly_accessible": isPublicAccessible(db.SecurityIPs),
@@ -152,7 +152,7 @@ func (g *mysqlGenerator) generateAWSDBInstance(
 		dbAttrs["db_subnet_group_name"] = db.SubnetID
 	}
 
-	id := modules.TerraformResourceID(provider, awsDBInstance, g.appName)
+	id := modules.TerraformResourceID(provider, awsDBInstance, db.DatabaseName)
 	pvdExts := modules.ProviderExtensions(provider, map[string]any{
 		"region": region,
 	}, awsDBInstance)

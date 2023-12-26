@@ -26,7 +26,8 @@ func TestNewMySQLGenerator(t *testing.T) {
 	workload := &workload.Workload{}
 	mysql := &mysql.MySQL{}
 	ws := &apiv1.Workspace{}
-	generator, err := NewMySQLGenerator(project, stack, appName, workload, mysql, ws)
+	dbName := "testdb"
+	generator, err := NewMySQLGenerator(project, stack, appName, workload, mysql, ws, dbName)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, generator)
@@ -182,6 +183,7 @@ func TestPatchWorkspaceConfig(t *testing.T) {
 			},
 		},
 	}
+	dbKey := "testdatabase"
 
 	g := &mysqlGenerator{
 		project:  project,
@@ -190,6 +192,7 @@ func TestPatchWorkspaceConfig(t *testing.T) {
 		workload: workload,
 		mysql:    mysql,
 		ws:       ws,
+		dbKey:    dbKey,
 	}
 	err := g.patchWorkspaceConfig()
 

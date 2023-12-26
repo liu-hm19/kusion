@@ -6,7 +6,7 @@ import (
 	workspaceapi "kusionstack.io/kusion/pkg/apis/core/v1"
 )
 
-func TestSetString(t *testing.T) {
+func TestProvider_SetString(t *testing.T) {
 	provider := &Provider{}
 	if err := provider.SetString("registry.terraform.io/hashicorp/aws/5.0.1"); err != nil {
 		t.Errorf("unexpected error: %v", err)

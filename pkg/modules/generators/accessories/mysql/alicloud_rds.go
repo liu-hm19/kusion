@@ -106,6 +106,7 @@ func (g *mysqlGenerator) generateAlicloudDBInstance(
 		"instance_type":    db.InstanceType,
 		"security_ips":     db.SecurityIPs,
 		"vswitch_id":       db.SubnetID,
+		"instance_name":    db.DatabaseName,
 	}
 
 	// Set serverless specific attributes.
@@ -125,7 +126,7 @@ func (g *mysqlGenerator) generateAlicloudDBInstance(
 		}
 	}
 
-	id := modules.TerraformResourceID(provider, alicloudDBInstance, g.appName)
+	id := modules.TerraformResourceID(provider, alicloudDBInstance, db.DatabaseName)
 	pvdExts := modules.ProviderExtensions(provider, map[string]any{
 		"region": region,
 	}, alicloudDBInstance)
@@ -141,7 +142,7 @@ func (g *mysqlGenerator) generateAlicloudDBConnection(
 		"instance_id": modules.KusionPathDependency(dbInstanceID, "id"),
 	}
 
-	id := modules.TerraformResourceID(provider, alicloudDBConnection, g.appName)
+	id := modules.TerraformResourceID(provider, alicloudDBConnection, g.mysql.DatabaseName)
 	pvdExts := modules.ProviderExtensions(provider, map[string]any{
 		"region": region,
 	}, alicloudDBConnection)
@@ -150,7 +151,8 @@ func (g *mysqlGenerator) generateAlicloudDBConnection(
 }
 
 func (g *mysqlGenerator) generateAlicloudRDSAccount(
-	accountName, randomPasswordID, dbInstanceID, region string, provider *inputs.Provider, db *mysql.MySQL,
+	accountName, randomPasswordID, dbInstanceID, region string,
+	provider *inputs.Provider, db *mysql.MySQL,
 ) apiv1.Resource {
 	rdsAccountAttrs := map[string]interface{}{
 		"account_name":     accountName,
@@ -159,7 +161,7 @@ func (g *mysqlGenerator) generateAlicloudRDSAccount(
 		"db_instance_id":   modules.KusionPathDependency(dbInstanceID, "id"),
 	}
 
-	id := modules.TerraformResourceID(provider, alicloudRDSAccount, g.appName)
+	id := modules.TerraformResourceID(provider, alicloudRDSAccount, db.DatabaseName)
 	pvdExts := modules.ProviderExtensions(provider, map[string]any{
 		"region": region,
 	}, alicloudRDSAccount)

@@ -33,6 +33,8 @@ type MySQL struct {
 	// Whether the host address of the cloud mysql instance for the workload to connect with is via
 	// public network or private network of the cloud vendor.
 	PrivateRouting bool `json:"privateRouting,omitempty" yaml:"privateRouting,omitempty"`
+	// The specified name of the mysql database instance, composed with `dbKey` and `suffix`.
+	DatabaseName string `json:"databaseName,omitempty" yaml:"databaseName,omitempty"`
 }
 
 // Validate validates whether the input of a mysql database instance is valid.

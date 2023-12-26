@@ -15,12 +15,9 @@ import (
 )
 
 var (
-	localDatabaseName     = "local-database"
-	localSecretSuffix     = "-local-secret"
-	localPVCSuffix        = "-local-pvc"
-	localDeploymentSuffix = "-local-deployment"
-	localServiceSuffix    = "-local-service"
-	localMatchLabels      = map[string]string{"accessory": localDatabaseName}
+	localSecretSuffix  = "-local-secret"
+	localPVCSuffix     = "-local-pvc"
+	localServiceSuffix = "-local-service"
 )
 
 // generateLocalResources generates locally deployed mysql database instance.
@@ -88,7 +85,7 @@ func (g *mysqlGenerator) generateLocalPVC(db *mysql.MySQL, spec *apiv1.Intent) e
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      g.appName + dbResSuffix + localPVCSuffix,
 			Namespace: g.project.Name,
-			Labels:    localMatchLabels,
+			Labels:    g.generateLocalMatchLabels(),
 		},
 		Spec: v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{
@@ -124,16 +121,16 @@ func (g *mysqlGenerator) generateLocalDeployment(db *mysql.MySQL, spec *apiv1.In
 			APIVersion: appsv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      g.appName + dbResSuffix + localDeploymentSuffix,
+			Name:      g.mysql.DatabaseName,
 			Namespace: g.project.Name,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: localMatchLabels,
+				MatchLabels: g.generateLocalMatchLabels(),
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: localMatchLabels,
+					Labels: g.generateLocalMatchLabels(),
 				},
 				Spec: podSpec,
 			},
@@ -148,37 +145,6 @@ func (g *mysqlGenerator) generateLocalDeployment(db *mysql.MySQL, spec *apiv1.In
 	)
 }
 
-func (g *mysqlGenerator) generateLocalService(db *mysql.MySQL, spec *apiv1.Intent) (string, error) {
-	// Prepare the service port for specific local database.
-	svcPort := g.generateLocalSvcPort(db)
-
-	svcName := g.appName + dbResSuffix + localServiceSuffix
-	// Create the k8s service for local database.
-	service := &v1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: v1.SchemeGroupVersion.String(),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      svcName,
-			Namespace: g.project.Name,
-			Labels:    localMatchLabels,
-		},
-		Spec: v1.ServiceSpec{
-			ClusterIP: "None",
-			Ports:     svcPort,
-			Selector:  localMatchLabels,
-		},
-	}
-
-	return svcName, modules.AppendToIntent(
-		apiv1.Kubernetes,
-		modules.KubernetesResourceID(service.TypeMeta, service.ObjectMeta),
-		spec,
-		service,
-	)
-}
-
 func (g *mysqlGenerator) generateLocalPodSpec(db *mysql.MySQL) (v1.PodSpec, error) {
 	var env []v1.EnvVar
 	var ports []v1.ContainerPort
@@ -190,13 +156,13 @@ func (g *mysqlGenerator) generateLocalPodSpec(db *mysql.MySQL) (v1.PodSpec, erro
 	secretName := g.appName + dbResSuffix + localSecretSuffix
 	ports = []v1.ContainerPort{
 		{
-			Name:          localDatabaseName,
+			Name:          g.mysql.DatabaseName,
 			ContainerPort: int32(3306),
 		},
 	}
 	volumes = []v1.Volume{
 		{
-			Name: localDatabaseName,
+			Name: g.mysql.DatabaseName,
 			VolumeSource: v1.VolumeSource{
 				PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
 					ClaimName: g.appName + dbResSuffix + localPVCSuffix,
@@ -206,7 +172,7 @@ func (g *mysqlGenerator) generateLocalPodSpec(db *mysql.MySQL) (v1.PodSpec, erro
 	}
 	volumeMounts = []v1.VolumeMount{
 		{
-			Name:      localDatabaseName,
+			Name:      g.mysql.DatabaseName,
 			MountPath: "/var/lib/mysql",
 		},
 	}
@@ -248,7 +214,7 @@ func (g *mysqlGenerator) generateLocalPodSpec(db *mysql.MySQL) (v1.PodSpec, erro
 	podSpec = v1.PodSpec{
 		Containers: []v1.Container{
 			{
-				Name:         localDatabaseName,
+				Name:         g.mysql.DatabaseName,
 				Image:        image,
 				Env:          env,
 				Ports:        ports,
@@ -259,6 +225,37 @@ func (g *mysqlGenerator) generateLocalPodSpec(db *mysql.MySQL) (v1.PodSpec, erro
 	}
 
 	return podSpec, nil
+}
+
+func (g *mysqlGenerator) generateLocalService(db *mysql.MySQL, spec *apiv1.Intent) (string, error) {
+	// Prepare the service port for specific local database.
+	svcPort := g.generateLocalSvcPort(db)
+
+	svcName := g.appName + dbResSuffix + localServiceSuffix
+	// Create the k8s service for local database.
+	service := &v1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: v1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      svcName,
+			Namespace: g.project.Name,
+			Labels:    g.generateLocalMatchLabels(),
+		},
+		Spec: v1.ServiceSpec{
+			ClusterIP: "None",
+			Ports:     svcPort,
+			Selector:  g.generateLocalMatchLabels(),
+		},
+	}
+
+	return svcName, modules.AppendToIntent(
+		apiv1.Kubernetes,
+		modules.KubernetesResourceID(service.TypeMeta, service.ObjectMeta),
+		spec,
+		service,
+	)
 }
 
 func (g *mysqlGenerator) generateLocalSvcPort(db *mysql.MySQL) []v1.ServicePort {
@@ -278,4 +275,10 @@ func (g *mysqlGenerator) generateLocalPassword(n int) string {
 	hashString := hex.EncodeToString(hash[:])
 
 	return hashString[:n]
+}
+
+func (g *mysqlGenerator) generateLocalMatchLabels() map[string]string {
+	return map[string]string{
+		"accessory": g.mysql.DatabaseName,
+	}
 }

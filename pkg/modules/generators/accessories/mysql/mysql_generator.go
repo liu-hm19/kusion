@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	errEmptyProjectName      = "project name must not be empty"
 	errUnsupportedTFProvider = "unsupported terraform provider for mysql generator: %s"
 	errUnsupportedMySQLType  = "unsupported mysql type: %s"
 	errEmptyCloudInfo        = "empty cloud info in module config"
@@ -55,6 +54,7 @@ type mysqlGenerator struct {
 	workload *workload.Workload
 	mysql    *mysql.MySQL
 	ws       *apiv1.Workspace
+	dbKey    string
 }
 
 // NewMySQLGenerator returns a new generator for mysql database.
@@ -65,11 +65,8 @@ func NewMySQLGenerator(
 	workload *workload.Workload,
 	mysql *mysql.MySQL,
 	ws *apiv1.Workspace,
+	dbKey string,
 ) (modules.Generator, error) {
-	if len(stack.Name) == 0 {
-		return nil, fmt.Errorf(errEmptyProjectName)
-	}
-
 	return &mysqlGenerator{
 		project:  project,
 		stack:    stack,
@@ -77,6 +74,7 @@ func NewMySQLGenerator(
 		workload: workload,
 		mysql:    mysql,
 		ws:       ws,
+		dbKey:    dbKey,
 	}, nil
 }
 
@@ -89,9 +87,10 @@ func NewMySQLGeneratorFunc(
 	workload *workload.Workload,
 	mysql *mysql.MySQL,
 	ws *apiv1.Workspace,
+	dbKey string,
 ) modules.NewGeneratorFunc {
 	return func() (modules.Generator, error) {
-		return NewMySQLGenerator(project, stack, appName, workload, mysql, ws)
+		return NewMySQLGenerator(project, stack, appName, workload, mysql, ws, dbKey)
 	}
 }
 
@@ -204,6 +203,12 @@ func (g *mysqlGenerator) patchWorkspaceConfig() error {
 
 	if subnetID, ok := mysqlCfg["subnetID"]; ok {
 		g.mysql.SubnetID = subnetID.(string)
+	}
+
+	if suffix, ok := mysqlCfg["suffix"]; ok {
+		g.mysql.DatabaseName = g.dbKey + suffix.(string)
+	} else {
+		g.mysql.DatabaseName = g.dbKey
 	}
 
 	return nil
