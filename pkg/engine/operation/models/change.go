@@ -9,7 +9,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/pterm/pterm"
 
-	"kusionstack.io/kusion/pkg/apis/core/v1"
+	v1 "kusionstack.io/kusion/pkg/apis/core/v1"
 	"kusionstack.io/kusion/pkg/log"
 	"kusionstack.io/kusion/pkg/util/diff"
 	"kusionstack.io/kusion/pkg/util/pretty"
@@ -165,23 +165,15 @@ func (p *Changes) AllUnChange() bool {
 func (p *Changes) Summary(writer io.Writer) {
 	// Create a fork of the default table, fill it with data and print it.
 	// Data can also be generated and inserted later.
-	tableHeader := []string{fmt.Sprintf("Stack: %s", p.stack.Name), "ID", "Action"}
+	tableHeader := []string{"Stack", "ID", "Action"}
 	tableData := pterm.TableData{tableHeader}
 
-	for i, step := range p.Values() {
-		itemPrefix := " * ├─"
-		if i == len(p.StepKeys)-1 {
-			itemPrefix = " * └─"
-		}
-
-		tableData = append(tableData, []string{itemPrefix, step.ID, step.Action.String()})
+	for _, step := range p.Values() {
+		tableData = append(tableData, []string{p.stack.Name, step.ID, step.Action.String()})
 	}
 
 	pterm.DefaultTable.WithHasHeader().
-		// WithBoxed(true).
 		WithHeaderStyle(&pterm.ThemeDefault.TableHeaderStyle).
-		WithLeftAlignment(true).
-		WithSeparator("  ").
 		WithData(tableData).
 		WithWriter(writer).
 		Render()

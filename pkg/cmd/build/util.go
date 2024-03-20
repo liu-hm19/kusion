@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 	yamlv3 "gopkg.in/yaml.v3"
 
-	"kusionstack.io/kusion/pkg/apis/core/v1"
+	v1 "kusionstack.io/kusion/pkg/apis/core/v1"
 	"kusionstack.io/kusion/pkg/cmd/build/builders"
 	"kusionstack.io/kusion/pkg/cmd/build/builders/kcl"
 	"kusionstack.io/kusion/pkg/log"
@@ -84,7 +84,7 @@ func Intent(o *builders.Options, p *v1.Project, s *v1.Stack) (*v1.Intent, error)
 			Workspace: ws,
 		}
 	default:
-		return nil, fmt.Errorf("unknow generator type:%s", bt)
+		return nil, fmt.Errorf("unknown generator type:%s", bt)
 	}
 
 	i, err := builder.Build(o, p, s)

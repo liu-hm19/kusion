@@ -206,7 +206,7 @@ func Apply(
 
 	// Progress bar, print dag walk detail
 	progressbar, err := pterm.DefaultProgressbar.
-		WithMaxWidth(0). // Set to 0, the terminal width will be used
+		// WithMaxWidth(0). // Set to 0, the terminal width will be used
 		WithTotal(len(changes.StepKeys)).
 		WithWriter(out).
 		Start()
