@@ -3,6 +3,9 @@
 # Usage: hack/run-e2e.sh
 # Example 1: hack/run-e2e.sh (run e2e test)
 
+# Get the OS type. 
+OSTYPE=$1
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -11,7 +14,7 @@ set -o pipefail
 GO111MODULE=on go install github.com/onsi/ginkgo/v2/ginkgo@v2.0.0
 
 # Check OS type. 
-if [[ $OSTYPE == "" ]]; then
+if [ $OSTYPE == "windows" ]; then
     # Build kusion binary on Windows
     go generate ./pkg/version
     go build -o bin/kusion.exe .
