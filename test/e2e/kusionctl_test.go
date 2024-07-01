@@ -106,3 +106,49 @@ var _ = ginkgo.Describe("Kusion Other Commands", func() {
 		})
 	})
 })
+
+var _ = ginkgo.Describe("konfig Quickstart test", func() {
+	ginkgo.It("apply and destroy quickstart", func() {
+		ginkgo.By("kusion apply", func() {
+			path := filepath.Join(GetWorkDir(), "konfig", "example", "quickstart", "default")
+			if runtime.GOOS == "windows" {
+				kusionApplyCmd = "kusion.exe apply --watch=false -y=true"
+			}
+			_, err := ExecKusionWithWorkDir(kusionApplyCmd, path)
+			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+		})
+
+		ginkgo.By("wait quickstart deploy", func() {
+			homedir := os.Getenv("HOME")
+			configPath := fmt.Sprintf("%s/.kube/config", homedir)
+			clusterConfig, err := clientcmd.BuildConfigFromFlags("", configPath)
+			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+			clusterClient := kubernetes.NewForConfigOrDie(clusterConfig)
+			gomega.Eventually(func() bool {
+				_, err := clusterClient.AppsV1().Deployments("quickstart").Get(context.TODO(), "quickstart-default-quickstart", metav1.GetOptions{})
+				return err == nil
+			}, 300*time.Second, 5*time.Second).Should(gomega.Equal(true))
+		})
+
+		ginkgo.By("kusion destroy", func() {
+			path := filepath.Join(GetWorkDir(), "konfig", "example", "quickstart", "default")
+			if runtime.GOOS == "windows" {
+				kusionDestroyCmd = "kusion.exe destroy -y=true"
+			}
+			_, err := ExecKusionWithWorkDir(kusionDestroyCmd, path)
+			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+		})
+
+		ginkgo.By("wait service-multi-stack destroy", func() {
+			homedir := os.Getenv("HOME")
+			configPath := fmt.Sprintf("%s/.kube/config", homedir)
+			clusterConfig, err := clientcmd.BuildConfigFromFlags("", configPath)
+			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+			clusterClient := kubernetes.NewForConfigOrDie(clusterConfig)
+			gomega.Eventually(func() bool {
+				_, err := clusterClient.CoreV1().Namespaces().Get(context.TODO(), "quickstart", metav1.GetOptions{})
+				return errors.IsNotFound(err)
+			}, 300*time.Second, 5*time.Second).Should(gomega.Equal(true))
+		})
+	})
+})

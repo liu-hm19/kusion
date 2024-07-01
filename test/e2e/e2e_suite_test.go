@@ -41,7 +41,7 @@ var _ = ginkgo.BeforeSuite(func() {
 	}
 
 	ginkgo.By("kusion init", func() {
-		path := filepath.Join(GetWorkDir(), "konfig", "quickstart")
+		path := filepath.Join(GetWorkDir(), "konfig", "quickstart-e2e")
 		err := os.MkdirAll(path, 0o755)
 		_, err = ExecKusionWithStdin(kusionInitCmd, path, "\n")
 		gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
