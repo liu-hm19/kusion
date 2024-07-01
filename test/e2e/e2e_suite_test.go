@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -41,7 +42,8 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	ginkgo.By("kusion init", func() {
 		path := filepath.Join(GetWorkDir(), "konfig", "quickstart")
-		_, err := ExecKusionWithStdin(kusionInitCmd, path, "\n")
+		err := os.MkdirAll(path, 0o755)
+		_, err = ExecKusionWithStdin(kusionInitCmd, path, "\n")
 		gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 	})
 })
