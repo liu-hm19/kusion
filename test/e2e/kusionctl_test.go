@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
@@ -15,12 +16,23 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	kusionGenerateCmd = "kusion generate"
+	kusionPreviewCmd  = "kusion preview -d=false"
+	kusionApplyCmd    = "kusion apply --watch=false -y=true"
+	kusionDestroyCmd  = "kusion destroy -y=true"
+	kusionVersionCmd  = "kusion version"
+)
+
 var _ = ginkgo.Describe("Kusion Configuration Commands", func() {
 	ginkgo.Context("kusion generate testing", func() {
 		ginkgo.It("kusion generate", func() {
 			// kusion build testing
 			path := filepath.Join(GetWorkDir(), "konfig", "example", "service-multi-stack", "dev")
-			output, err := ExecKusionWithWorkDir("kusion generate", path)
+			if runtime.GOOS == "windows" {
+				kusionGenerateCmd = "kusion.exe generate"
+			}
+			output, err := ExecKusionWithWorkDir(kusionGenerateCmd, path)
 			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 			gomega.Expect(output).To(gomega.ContainSubstring("Generating Spec"))
 		})
@@ -30,14 +42,20 @@ var _ = ginkgo.Describe("Kusion Configuration Commands", func() {
 var _ = ginkgo.Describe("kusion Runtime Commands", func() {
 	ginkgo.It("kusion preview", func() {
 		path := filepath.Join(GetWorkDir(), "konfig", "example", "service-multi-stack", "dev")
-		_, err := ExecKusionWithWorkDir("kusion preview -d=false", path)
+		if runtime.GOOS == "windows" {
+			kusionPreviewCmd = "kusion.exe preview -d=false"
+		}
+		_, err := ExecKusionWithWorkDir(kusionPreviewCmd, path)
 		gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 	})
 
 	ginkgo.It("kusion apply", func() {
 		ginkgo.By("kusion apply", func() {
 			path := filepath.Join(GetWorkDir(), "konfig", "example", "service-multi-stack", "dev")
-			_, err := ExecKusionWithWorkDir("kusion apply --watch=false -y=true", path)
+			if runtime.GOOS == "windows" {
+				kusionApplyCmd = "kusion.exe apply --watch=false -y=true"
+			}
+			_, err := ExecKusionWithWorkDir(kusionApplyCmd, path)
 			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 		})
 
@@ -55,7 +73,10 @@ var _ = ginkgo.Describe("kusion Runtime Commands", func() {
 
 		ginkgo.By("kusion destroy", func() {
 			path := filepath.Join(GetWorkDir(), "konfig", "example", "service-multi-stack", "dev")
-			_, err := ExecKusionWithWorkDir("kusion destroy -y=true", path)
+			if runtime.GOOS == "windows" {
+				kusionDestroyCmd = "kusion.exe destroy -y=true"
+			}
+			_, err := ExecKusionWithWorkDir(kusionDestroyCmd, path)
 			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 		})
 
@@ -76,7 +97,10 @@ var _ = ginkgo.Describe("kusion Runtime Commands", func() {
 var _ = ginkgo.Describe("Kusion Other Commands", func() {
 	ginkgo.Context("kusion version testing", func() {
 		ginkgo.It("kusion version", func() {
-			output, err := ExecKusion("kusion version")
+			if runtime.GOOS == "windows" {
+				kusionVersionCmd = "kusion.exe version"
+			}
+			output, err := ExecKusion(kusionVersionCmd)
 			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 			gomega.Expect(output).To(gomega.ContainSubstring("releaseVersion"))
 		})
