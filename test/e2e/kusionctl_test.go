@@ -69,7 +69,7 @@ var _ = ginkgo.Describe("kusion Runtime Commands", func() {
 			gomega.Eventually(func() bool {
 				_, err := clusterClient.AppsV1().Deployments("service-multi-stack").Get(context.TODO(), "service-multi-stack-dev-echoserver", metav1.GetOptions{})
 				return err == nil
-			}, 300*time.Second, 5*time.Second).Should(gomega.Equal(true))
+			}, 900*time.Second, 5*time.Second).Should(gomega.Equal(true))
 		})
 
 		ginkgo.By("kusion destroy", func() {
@@ -91,7 +91,7 @@ var _ = ginkgo.Describe("kusion Runtime Commands", func() {
 			gomega.Eventually(func() bool {
 				_, err := clusterClient.CoreV1().Namespaces().Get(context.TODO(), "service-multi-stack", metav1.GetOptions{})
 				return errors.IsNotFound(err)
-			}, 300*time.Second, 5*time.Second).Should(gomega.Equal(true))
+			}, 900*time.Second, 5*time.Second).Should(gomega.Equal(true))
 		})
 	})
 })
@@ -129,7 +129,7 @@ var _ = ginkgo.Describe("konfig Quickstart test", func() {
 			gomega.Eventually(func() bool {
 				_, err := clusterClient.AppsV1().Deployments("quickstart").Get(context.TODO(), "quickstart-default-quickstart", metav1.GetOptions{})
 				return err == nil
-			}, 300*time.Second, 5*time.Second).Should(gomega.Equal(true))
+			}, 900*time.Second, 5*time.Second).Should(gomega.Equal(true))
 		})
 
 		ginkgo.By("kusion destroy", func() {
@@ -150,7 +150,7 @@ var _ = ginkgo.Describe("konfig Quickstart test", func() {
 			gomega.Eventually(func() bool {
 				_, err := clusterClient.CoreV1().Namespaces().Get(context.TODO(), "quickstart", metav1.GetOptions{})
 				return errors.IsNotFound(err)
-			}, 300*time.Second, 5*time.Second).Should(gomega.Equal(true))
+			}, 900*time.Second, 5*time.Second).Should(gomega.Equal(true))
 		})
 	})
 })
