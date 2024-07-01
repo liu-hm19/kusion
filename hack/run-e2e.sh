@@ -10,10 +10,18 @@ set -o pipefail
 # Install ginkgo
 GO111MODULE=on go install github.com/onsi/ginkgo/v2/ginkgo@v2.0.0
 
-# Build kusion binary
-go generate ./pkg/version
-go build -o bin/kusion .
+# Check OS type. 
+os=${OSTYPE//[0-9.]/}
 
+if [[ $os == "windows" ]]; then
+    # Build kusion binary on Windows
+    go generate ./pkg/version
+    go build -o bin/kusion.exe .
+else
+    # Build kusion binary on Linux
+    go generate ./pkg/version
+    go build -o bin/kusion .
+fi
 
 # Run e2e
 set +e
