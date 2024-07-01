@@ -57,4 +57,4 @@ jobs:
 
       - name: Run e2e
         run: |
-          hack/run-e2e.sh windows
+          make e2e-test OSTYPE=windows
