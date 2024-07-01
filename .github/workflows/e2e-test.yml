@@ -57,7 +57,4 @@ jobs:
 
       - name: Run e2e
         run: |
-          os=${OSTYPE//[0-9.]/}
-          echo $os
-          
           make e2e-test
