@@ -61,7 +61,8 @@ var _ = ginkgo.Describe("kusion Runtime Commands", func() {
 
 		ginkgo.By("wait service-multi-stack deploy", func() {
 			homedir := os.Getenv("HOME")
-			configPath := fmt.Sprintf("%s/.kube/config", homedir)
+			// configPath := fmt.Sprintf("%s/.kube/config", homedir)
+			configPath := filepath.Join(homedir, ".kube", "config")
 			clusterConfig, err := clientcmd.BuildConfigFromFlags("", configPath)
 			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 			clusterClient := kubernetes.NewForConfigOrDie(clusterConfig)
@@ -82,7 +83,8 @@ var _ = ginkgo.Describe("kusion Runtime Commands", func() {
 
 		ginkgo.By("wait service-multi-stack destroy", func() {
 			homedir := os.Getenv("HOME")
-			configPath := fmt.Sprintf("%s/.kube/config", homedir)
+			// configPath := fmt.Sprintf("%s/.kube/config", homedir)
+			configPath := filepath.Join(homedir, ".kube", "config")
 			clusterConfig, err := clientcmd.BuildConfigFromFlags("", configPath)
 			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 			clusterClient := kubernetes.NewForConfigOrDie(clusterConfig)
