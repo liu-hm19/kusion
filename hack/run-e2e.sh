@@ -13,6 +13,8 @@ GO111MODULE=on go install github.com/onsi/ginkgo/v2/ginkgo@v2.0.0
 # Check OS type. 
 os=${OSTYPE//[0-9.]/}
 
+echo $os
+
 if [[ $os == "windows" ]]; then
     # Build kusion binary on Windows
     go generate ./pkg/version

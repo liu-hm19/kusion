@@ -56,4 +56,8 @@ jobs:
           kubectl get nodes
 
       - name: Run e2e
-        run: make e2e-test
+        run: |
+          os=${OSTYPE//[0-9.]/}
+          echo $os
+          
+          make e2e-test
