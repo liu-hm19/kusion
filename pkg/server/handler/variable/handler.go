@@ -14,20 +14,20 @@ import (
 	logutil "kusionstack.io/kusion/pkg/server/util/logging"
 )
 
-//	@Id				createVariable
-//	@Summary		Create variable
-//	@Description	Create a new variable
-//	@Tags			variable
-//	@Accept			json
-//	@Produce		json
-//	@Param			variable			body		request.CreateVariableSetRequest	true	"Created variable"
-//	@Success		200					{object}	entity.Variable						"Success"
-//	@Failure		400					{object}	error								"Bad Request"
-//	@Failure		401					{object}	error								"Unauthorized"
-//	@Failure		429					{object}	error								"Too Many Requests"
-//	@Failure		404					{object}	error								"Not Found"
-//	@Failure		500					{object}	error								"Internal Server Error"
-//	@Router			/api/v1/variables 	[post]
+// @Id				createVariable
+// @Summary		Create variable
+// @Description	Create a new variable
+// @Tags			variable
+// @Accept			json
+// @Produce		json
+// @Param			variable			body		request.CreateVariableSetRequest	true	"Created variable"
+// @Success		200					{object}	entity.Variable						"Success"
+// @Failure		400					{object}	error								"Bad Request"
+// @Failure		401					{object}	error								"Unauthorized"
+// @Failure		429					{object}	error								"Too Many Requests"
+// @Failure		404					{object}	error								"Not Found"
+// @Failure		500					{object}	error								"Internal Server Error"
+// @Router			/api/v1/variables 	[post]
 func (h *Handler) CreateVariable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -48,19 +48,19 @@ func (h *Handler) CreateVariable() http.HandlerFunc {
 	}
 }
 
-//	@Id				deleteVariable
-//	@Summary		Delete variable
-//	@Description	Delete a specified variable with fqn
-//	@Tags			variable
-//	@Produce		json
-//	@Param			fqn							path		string	true	"Variable Fqn"
-//	@Success		200							{object}	string	"Success"
-//	@Failure		400							{object}	error	"Bad Request"
-//	@Failure		401							{object}	error	"Unauthorized"
-//	@Failure		429							{object}	error	"Too Many Requests"
-//	@Failure		404							{object}	error	"Not Found"
-//	@Failure		500							{object}	error	"Internal Server Error"
-//	@Router			/api/v1/variables/{fqn} 	[delete]
+// @Id				deleteVariable
+// @Summary		Delete variable
+// @Description	Delete a specified variable with fqn
+// @Tags			variable
+// @Produce		json
+// @Param			fqn							path		string	true	"Variable Fqn"
+// @Success		200							{object}	string	"Success"
+// @Failure		400							{object}	error	"Bad Request"
+// @Failure		401							{object}	error	"Unauthorized"
+// @Failure		429							{object}	error	"Too Many Requests"
+// @Failure		404							{object}	error	"Not Found"
+// @Failure		500							{object}	error	"Internal Server Error"
+// @Router			/api/v1/variables/{fqn} 	[delete]
 func (h *Handler) DeleteVariable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -76,21 +76,21 @@ func (h *Handler) DeleteVariable() http.HandlerFunc {
 	}
 }
 
-//	@Id				updateVariable
-//	@Summary		Update variable
-//	@Description	Update the specified variable
-//	@Tags			variable
-//	@Accept			json
-//	@Produce		json
-//	@Param			fqn							path		string							true	"Variable Fqn"
-//	@Param			variable					body		request.UpdateVariableRequest	true	"Updated Variable"
-//	@Success		200							{object}	entity.Variable					"Success"
-//	@Failure		400							{object}	error							"Bad Request"
-//	@Failure		401							{object}	error							"Unauthorized"
-//	@Failure		429							{object}	error							"Too Many Requests"
-//	@Failure		404							{object}	error							"Not Found"
-//	@Failure		500							{object}	error							"Internal Server Error"
-//	@Router			/api/v1/variables/{fqn} 																																																																																			[put]
+// @Id				updateVariable
+// @Summary		Update variable
+// @Description	Update the specified variable
+// @Tags			variable
+// @Accept			json
+// @Produce		json
+// @Param			fqn							path		string							true	"Variable Fqn"
+// @Param			variable					body		request.UpdateVariableRequest	true	"Updated Variable"
+// @Success		200							{object}	entity.Variable					"Success"
+// @Failure		400							{object}	error							"Bad Request"
+// @Failure		401							{object}	error							"Unauthorized"
+// @Failure		429							{object}	error							"Too Many Requests"
+// @Failure		404							{object}	error							"Not Found"
+// @Failure		500							{object}	error							"Internal Server Error"
+// @Router			/api/v1/variables/{fqn} 																																																																																			[put]
 func (h *Handler) UpdateVariable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -114,19 +114,19 @@ func (h *Handler) UpdateVariable() http.HandlerFunc {
 	}
 }
 
-//	@Id				getVariable
-//	@Summary		Get variable
-//	@Description	Get variable by variable fqn
-//	@Tags			variable
-//	@Produce		json
-//	@Param			fqn							path		string			true	"Variable Fqn"
-//	@Success		200							{object}	entity.Variable	"Success"
-//	@Failure		400							{object}	error			"Bad Request"
-//	@Failure		401							{object}	error			"Unauthorized"
-//	@Failure		429							{object}	error			"Too Many Requests"
-//	@Failure		404							{object}	error			"Not Found"
-//	@Failure		500							{object}	error			"Internal Server Error"
-//	@Router			/api/v1/variables/{fqn} 																																																[get]
+// @Id				getVariable
+// @Summary		Get variable
+// @Description	Get variable by variable fqn
+// @Tags			variable
+// @Produce		json
+// @Param			fqn							path		string			true	"Variable Fqn"
+// @Success		200							{object}	entity.Variable	"Success"
+// @Failure		400							{object}	error			"Bad Request"
+// @Failure		401							{object}	error			"Unauthorized"
+// @Failure		429							{object}	error			"Too Many Requests"
+// @Failure		404							{object}	error			"Not Found"
+// @Failure		500							{object}	error			"Internal Server Error"
+// @Router			/api/v1/variables/{fqn} 																																																[get]
 func (h *Handler) GetVariable() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -142,19 +142,19 @@ func (h *Handler) GetVariable() http.HandlerFunc {
 	}
 }
 
-//	@Id				listVariables
-//	@Summary		List variables
-//	@Description	List variables
-//	@Tags			variable
-//	@Produce		json
-//	@Param			variable	body		request.ListVariableSetRequest	true	"Variable labels to filter variables by."
-//	@Success		200			{object}	entity.VariableLabelsListResult	"Success"
-//	@Failure		400			{object}	error							"Bad Request"
-//	@Failure		401			{object}	error							"Unauthorized"
-//	@Failure		429			{object}	error							"Too Many Requests"
-//	@Failure		404			{object}	error							"Not Found"
-//	@Failure		500			{object}	error							"Internal Server Error"
-//	@Router			/api/v1/variables [get]
+// @Id				listVariables
+// @Summary		List variables
+// @Description	List variables
+// @Tags			variable
+// @Produce		json
+// @Param			variable	body		request.ListVariableSetRequest	true	"Variable labels to filter variables by."
+// @Success		200			{object}	entity.VariableLabelsListResult	"Success"
+// @Failure		400			{object}	error							"Bad Request"
+// @Failure		401			{object}	error							"Unauthorized"
+// @Failure		429			{object}	error							"Too Many Requests"
+// @Failure		404			{object}	error							"Not Found"
+// @Failure		500			{object}	error							"Internal Server Error"
+// @Router			/api/v1/variables [get]
 func (h *Handler) ListVariables() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.

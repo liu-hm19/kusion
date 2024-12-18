@@ -21,7 +21,7 @@ type VariableModel struct {
 }
 
 // The TableName method returns the name of the database table that the struct is mapped to.
-func (vl *VariableModel) TableName() string {
+func (v *VariableModel) TableName() string {
 	return "variable"
 }
 
