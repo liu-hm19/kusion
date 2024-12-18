@@ -17,20 +17,20 @@ import (
 	logutil "kusionstack.io/kusion/pkg/server/util/logging"
 )
 
-//	@Id				createVariableLabels
-//	@Summary		Create variable labels
-//	@Description	Create a new set of variable labels
-//	@Tags			variable_labels
-//	@Accept			json
-//	@Produce		json
-//	@Param			variable_labels				body		request.CreateVariableLabelsRequest	true	"Created variable labels"
-//	@Success		200							{object}	entity.VariableLabels				"Success"
-//	@Failure		400							{object}	error								"Bad Request"
-//	@Failure		401							{object}	error								"Unauthorized"
-//	@Failure		429							{object}	error								"Too Many Requests"
-//	@Failure		404							{object}	error								"Not Found"
-//	@Failure		500							{object}	error								"Internal Server Error"
-//	@Router			/api/v1/variable-labels 	[post]
+// @Id				createVariableLabels
+// @Summary		Create variable labels
+// @Description	Create a new set of variable labels
+// @Tags			variable_labels
+// @Accept			json
+// @Produce		json
+// @Param			variable_labels				body		request.CreateVariableLabelsRequest	true	"Created variable labels"
+// @Success		200							{object}	entity.VariableLabels				"Success"
+// @Failure		400							{object}	error								"Bad Request"
+// @Failure		401							{object}	error								"Unauthorized"
+// @Failure		429							{object}	error								"Too Many Requests"
+// @Failure		404							{object}	error								"Not Found"
+// @Failure		500							{object}	error								"Internal Server Error"
+// @Router			/api/v1/variable-labels 	[post]
 func (h *Handler) CreateVariableLabels() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -51,19 +51,19 @@ func (h *Handler) CreateVariableLabels() http.HandlerFunc {
 	}
 }
 
-//	@Id				deleteVariableLabels
-//	@Summary		Delete variable labels
-//	@Description	Delete a specified variable with labels
-//	@Tags			variable_labels
-//	@Produce		json
-//	@Param			key								path		string	true	"Variable Key"
-//	@Success		200								{object}	string	"Success"
-//	@Failure		400								{object}	error	"Bad Request"
-//	@Failure		401								{object}	error	"Unauthorized"
-//	@Failure		429								{object}	error	"Too Many Requests"
-//	@Failure		404								{object}	error	"Not Found"
-//	@Failure		500								{object}	error	"Internal Server Error"
-//	@Router			/api/v1/variable-labels/{key} 	[delete]
+// @Id				deleteVariableLabels
+// @Summary		Delete variable labels
+// @Description	Delete a specified variable with labels
+// @Tags			variable_labels
+// @Produce		json
+// @Param			key								path		string	true	"Variable Key"
+// @Success		200								{object}	string	"Success"
+// @Failure		400								{object}	error	"Bad Request"
+// @Failure		401								{object}	error	"Unauthorized"
+// @Failure		429								{object}	error	"Too Many Requests"
+// @Failure		404								{object}	error	"Not Found"
+// @Failure		500								{object}	error	"Internal Server Error"
+// @Router			/api/v1/variable-labels/{key} 	[delete]
 func (h *Handler) DeleteVariableLabels() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -79,21 +79,21 @@ func (h *Handler) DeleteVariableLabels() http.HandlerFunc {
 	}
 }
 
-//	@Id				updateVariableLabels
-//	@Summary		Update variable labels
-//	@Description	Update the specified variable labels
-//	@Tags			variable_labels
-//	@Accept			json
-//	@Produce		json
-//	@Param			key								path		string								true	"Variable Key"
-//	@Param			variable_labels					body		request.UpdateVariableLabelsRequest	true	"Updated Variable Labels"
-//	@Success		200								{object}	entity.VariableLabels				"Success"
-//	@Failure		400								{object}	error								"Bad Request"
-//	@Failure		401								{object}	error								"Unauthorized"
-//	@Failure		429								{object}	error								"Too Many Requests"
-//	@Failure		404								{object}	error								"Not Found"
-//	@Failure		500								{object}	error								"Internal Server Error"
-//	@Router			/api/v1/variable-labels/{key} 																																																																																											[put]
+// @Id				updateVariableLabels
+// @Summary		Update variable labels
+// @Description	Update the specified variable labels
+// @Tags			variable_labels
+// @Accept			json
+// @Produce		json
+// @Param			key								path		string								true	"Variable Key"
+// @Param			variable_labels					body		request.UpdateVariableLabelsRequest	true	"Updated Variable Labels"
+// @Success		200								{object}	entity.VariableLabels				"Success"
+// @Failure		400								{object}	error								"Bad Request"
+// @Failure		401								{object}	error								"Unauthorized"
+// @Failure		429								{object}	error								"Too Many Requests"
+// @Failure		404								{object}	error								"Not Found"
+// @Failure		500								{object}	error								"Internal Server Error"
+// @Router			/api/v1/variable-labels/{key} 																																																																																											[put]
 func (h *Handler) UpdateVariableLabels() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -117,19 +117,19 @@ func (h *Handler) UpdateVariableLabels() http.HandlerFunc {
 	}
 }
 
-//	@Id				getVariableLabels
-//	@Summary		Get variable labels
-//	@Description	Get variable labels by variable key
-//	@Tags			variable_labels
-//	@Produce		json
-//	@Param			key								path		string					true	"Variable Key"
-//	@Success		200								{object}	entity.VariableLabels	"Success"
-//	@Failure		400								{object}	error					"Bad Request"
-//	@Failure		401								{object}	error					"Unauthorized"
-//	@Failure		429								{object}	error					"Too Many Requests"
-//	@Failure		404								{object}	error					"Not Found"
-//	@Failure		500								{object}	error					"Internal Server Error"
-//	@Router			/api/v1/variable-labels/{key} 																																																																[get]
+// @Id				getVariableLabels
+// @Summary		Get variable labels
+// @Description	Get variable labels by variable key
+// @Tags			variable_labels
+// @Produce		json
+// @Param			key								path		string					true	"Variable Key"
+// @Success		200								{object}	entity.VariableLabels	"Success"
+// @Failure		400								{object}	error					"Bad Request"
+// @Failure		401								{object}	error					"Unauthorized"
+// @Failure		429								{object}	error					"Too Many Requests"
+// @Failure		404								{object}	error					"Not Found"
+// @Failure		500								{object}	error					"Internal Server Error"
+// @Router			/api/v1/variable-labels/{key} 																																																																[get]
 func (h *Handler) GetVariableLabels() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
@@ -145,21 +145,21 @@ func (h *Handler) GetVariableLabels() http.HandlerFunc {
 	}
 }
 
-//	@Id				listVariableLabels
-//	@Summary		List variable labels
-//	@Description	List variable labels
-//	@Tags			variable_labels
-//	@Produce		json
-//	@Param			labels		query		[]string							false	"Variable labels to filter variables by. Default to all(empty) labels."
-//	@Param			page		query		string								false	"Page number of the paginated list results. Default to 1."
-//	@Param			pageSize	query		string								false	"Page size of the paginated list results. If not set, the result won't be paginated."
-//	@Success		200			{object}	[]entity.VariableLabelsListResult	"Success"
-//	@Failure		400			{object}	error								"Bad Request"
-//	@Failure		401			{object}	error								"Unauthorized"
-//	@Failure		429			{object}	error								"Too Many Requests"
-//	@Failure		404			{object}	error								"Not Found"
-//	@Failure		500			{object}	error								"Internal Server Error"
-//	@Router			/api/v1/variable-labels [get]
+// @Id				listVariableLabels
+// @Summary		List variable labels
+// @Description	List variable labels
+// @Tags			variable_labels
+// @Produce		json
+// @Param			labels		query		[]string							false	"Variable labels to filter variables by. Default to all(empty) labels."
+// @Param			page		query		string								false	"Page number of the paginated list results. Default to 1."
+// @Param			pageSize	query		string								false	"Page size of the paginated list results. If not set, the result won't be paginated."
+// @Success		200			{object}	[]entity.VariableLabelsListResult	"Success"
+// @Failure		400			{object}	error								"Bad Request"
+// @Failure		401			{object}	error								"Unauthorized"
+// @Failure		429			{object}	error								"Too Many Requests"
+// @Failure		404			{object}	error								"Not Found"
+// @Failure		500			{object}	error								"Internal Server Error"
+// @Router			/api/v1/variable-labels [get]
 func (h *Handler) ListVariableLabels() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Getting stuff from context.
